@@ -7,6 +7,7 @@ interface DashboardProps {
   onNewTask: () => void;
   onTaskClick: (t: Task) => void;
   onAddMember: () => void;
+  onDeleteMember: (id: string, name: string) => void;
 }
 
 function isOverdue(task: Task): boolean {
@@ -18,7 +19,7 @@ function isOverdue(task: Task): boolean {
   return due < today;
 }
 
-export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAddMember }: DashboardProps) {
+export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAddMember, onDeleteMember }: DashboardProps) {
   const total = tasks.length;
   const inProgress = tasks.filter(t => t.status === 'en-progreso').length;
   const completed = tasks.filter(t => t.status === 'completado').length;
@@ -122,6 +123,15 @@ export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAd
                   <div className={`workload-badge${count === 0 ? ' zero' : ''}`}>
                     {count}
                   </div>
+                  <button
+                    className="workload-delete-btn"
+                    title={`Eliminar ${member.name}`}
+                    onClick={() => onDeleteMember(member.id, member.name)}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" />
+                    </svg>
+                  </button>
                 </div>
               ))
             )}

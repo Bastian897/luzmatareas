@@ -306,6 +306,17 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
   }
 
   /* ---- MEMBER HANDLERS ---- */
+  async function handleDeleteMember(id: string, name: string) {
+    if (!window.confirm(`¿Eliminar a ${name}? Sus tareas quedarán sin asignar.`)) return;
+    const { error } = await supabase.from('team_members').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting member:', error);
+      alert('Error al eliminar miembro: ' + error.message);
+      return;
+    }
+    await Promise.all([fetchMembers(), fetchTasks()]);
+  }
+
   async function handleAddMember(data: { name: string; role: string; color: string; initials: string }) {
     setSavingMember(true);
     const { error } = await supabase.from('team_members').insert([data]);
@@ -359,6 +370,7 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
           onNewTask={() => openNewTask()}
           onTaskClick={openDetail}
           onAddMember={() => setShowMemberModal(true)}
+          onDeleteMember={handleDeleteMember}
         />
       )}
 

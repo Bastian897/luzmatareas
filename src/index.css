@@ -1635,3 +1635,29 @@ img { display: block; max-width: 100%; }
   transform: scale(1.15);
   box-shadow: 3px 3px 0 var(--luzma-ink);
 }
+
+/* ---------- WORKLOAD DELETE BUTTON ---------- */
+.workload-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  opacity: 0;
+}
+.workload-row:hover .workload-delete-btn {
+  opacity: 1;
+}
+.workload-delete-btn:hover {
+  background: var(--luzma-red);
+  border-color: var(--luzma-ink);
+  color: #fff;
+  box-shadow: 2px 2px 0 var(--luzma-ink);
+}
