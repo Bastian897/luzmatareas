@@ -79,7 +79,7 @@ export default function Board({ tasks, members, onTaskClick, onStatusChange, onN
       <div className="lzm-page-header">
         <p className="lzm-eyebrow">Vista Kanban</p>
         <h1>Board</h1>
-        <p className="lzm-subtitle">Arrastrá las tarjetas entre columnas para actualizar el estado de las tareas.</p>
+        <p className="lzm-subtitle">Deslizá entre columnas · Arrastrá las tarjetas para cambiar el estado.</p>
       </div>
 
       <div className="board-columns">

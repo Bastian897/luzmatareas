@@ -217,8 +217,8 @@ export default function TaskList({ tasks, members, onTaskClick, onDelete, onComp
                         </div>
                       )}
                     </td>
-                    <td><StatusPill status={task.status} /></td>
-                    <td>
+                    <td data-label="Estado"><StatusPill status={task.status} /></td>
+                    <td data-label="Asignado">
                       <div className="table-assignee">
                         <Avatar member={assignee} size="sm" />
                         <span className="table-assignee-name">
@@ -226,8 +226,8 @@ export default function TaskList({ tasks, members, onTaskClick, onDelete, onComp
                         </span>
                       </div>
                     </td>
-                    <td><PriorityPill priority={task.priority} /></td>
-                    <td>
+                    <td data-label="Prioridad"><PriorityPill priority={task.priority} /></td>
+                    <td data-label="Vence">
                       <span className={`table-date${overdue ? ' overdue' : ''}`}>
                         {overdue ? '⚠ ' : ''}{formatDate(task.due_date)}
                       </span>
