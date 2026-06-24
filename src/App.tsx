@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type FormEvent } from 'react';
 import { supabase } from './lib/supabase';
 import { Task, TeamMember, Comment, Status } from './types';
 import Header, { View } from './components/Header';
@@ -7,13 +7,17 @@ import Board from './components/Board';
 import TaskList from './components/TaskList';
 import TaskModal from './components/TaskModal';
 import TaskDetail from './components/TaskDetail';
+import MemberModal from './components/MemberModal';
 
 /* ============================================================
    ENV CHECK
    ============================================================ */
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-const isConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY && SUPABASE_URL !== 'undefined' && SUPABASE_KEY !== 'undefined');
+const isConfigured = Boolean(
+  SUPABASE_URL && SUPABASE_KEY &&
+  SUPABASE_URL !== 'undefined' && SUPABASE_KEY !== 'undefined'
+);
 
 /* ============================================================
    CONFIG ERROR SCREEN
@@ -38,34 +42,110 @@ function ConfigError() {
 }
 
 /* ============================================================
+   LOGIN SCREEN
+   ============================================================ */
+function LoginScreen({ onLogin }: { onLogin: (pw: string) => boolean }) {
+  const [pw, setPw] = useState('');
+  const [error, setError] = useState('');
+  const [shaking, setShaking] = useState(false);
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!onLogin(pw)) {
+      setError('Contraseña incorrecta');
+      setShaking(true);
+      setTimeout(() => setShaking(false), 500);
+      setPw('');
+    }
+  }
+
+  return (
+    <div className="lzm-login-screen">
+      <div className={`lzm-login-box${shaking ? ' shake' : ''}`}>
+        <div className="lzm-login-logo-wrap">
+          <div className="lzm-logo-box">
+            <span className="lzm-logo-luzma">LUZMA</span>
+            <span className="lzm-logo-tv">TV</span>
+          </div>
+        </div>
+        <h1 className="lzm-login-title">TAREAS</h1>
+        <p className="lzm-login-subtitle">Ingresá la contraseña del equipo</p>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}>
+          <input
+            type="password"
+            className="form-input lzm-login-input"
+            placeholder="••••••••••"
+            value={pw}
+            onChange={e => { setPw(e.target.value); setError(''); }}
+            autoFocus
+          />
+          {error && <p className="lzm-login-error">{error}</p>}
+          <button type="submit" className="btn btn-primary btn-lg btn-full">
+            Entrar
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    LOADING SCREEN
    ============================================================ */
 function LoadingScreen() {
   return (
     <div className="lzm-loading">
       <div className="lzm-spinner" />
-      <p className="lzm-loading-text">Cargando LuzmaTV...</p>
+      <p className="lzm-loading-text">Cargando...</p>
     </div>
   );
 }
 
 /* ============================================================
-   APP
+   APP — maneja solo el login
    ============================================================ */
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => sessionStorage.getItem('lzm-auth') === '1'
+  );
+
   if (!isConfigured) return <ConfigError />;
 
-  const [view, setView]                   = useState<View>('dashboard');
-  const [tasks, setTasks]                 = useState<Task[]>([]);
-  const [members, setMembers]             = useState<TeamMember[]>([]);
-  const [loading, setLoading]             = useState(true);
-  const [selectedTask, setSelectedTask]   = useState<Task | null>(null);
-  const [showModal, setShowModal]         = useState(false);
-  const [editingTask, setEditingTask]     = useState<Task | null>(null);
-  const [defaultStatus, setDefaultStatus] = useState<Status | undefined>(undefined);
-  const [comments, setComments]           = useState<Comment[]>([]);
+  function handleLogin(pw: string): boolean {
+    if (pw === 'luzmatv123') {
+      sessionStorage.setItem('lzm-auth', '1');
+      setIsLoggedIn(true);
+      return true;
+    }
+    return false;
+  }
 
-  // Current user: Carla Vázquez (Productora)
+  function handleLogout() {
+    sessionStorage.removeItem('lzm-auth');
+    setIsLoggedIn(false);
+  }
+
+  if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} />;
+
+  return <AppInner onLogout={handleLogout} />;
+}
+
+/* ============================================================
+   APP INNER — toda la lógica de la app (solo si está logueado)
+   ============================================================ */
+function AppInner({ onLogout }: { onLogout: () => void }) {
+  const [view, setView]                       = useState<View>('dashboard');
+  const [tasks, setTasks]                     = useState<Task[]>([]);
+  const [members, setMembers]                 = useState<TeamMember[]>([]);
+  const [loading, setLoading]                 = useState(true);
+  const [selectedTask, setSelectedTask]       = useState<Task | null>(null);
+  const [showModal, setShowModal]             = useState(false);
+  const [editingTask, setEditingTask]         = useState<Task | null>(null);
+  const [defaultStatus, setDefaultStatus]     = useState<Status | undefined>(undefined);
+  const [comments, setComments]               = useState<Comment[]>([]);
+  const [showMemberModal, setShowMemberModal] = useState(false);
+  const [savingMember, setSavingMember]       = useState(false);
+
   const currentUser = members.find(m => m.role === 'Productora') ?? members[0] ?? null;
 
   /* ---- FETCH ---- */
@@ -75,10 +155,7 @@ export default function App() {
       .select('*, assignee:team_members(*)')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching tasks:', error);
-      return;
-    }
+    if (error) { console.error('Error fetching tasks:', error); return; }
     setTasks((data as Task[]) ?? []);
   }, []);
 
@@ -88,10 +165,7 @@ export default function App() {
       .select('*')
       .order('name');
 
-    if (error) {
-      console.error('Error fetching members:', error);
-      return;
-    }
+    if (error) { console.error('Error fetching members:', error); return; }
     setMembers((data as TeamMember[]) ?? []);
   }, []);
 
@@ -102,10 +176,7 @@ export default function App() {
       .eq('task_id', taskId)
       .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching comments:', error);
-      return;
-    }
+    if (error) { console.error('Error fetching comments:', error); return; }
     setComments((data as Comment[]) ?? []);
   }, []);
 
@@ -119,7 +190,7 @@ export default function App() {
     init();
   }, [fetchMembers, fetchTasks]);
 
-  /* ---- HANDLERS ---- */
+  /* ---- TASK HANDLERS ---- */
   async function handleAddTask(data: Partial<Task>) {
     const payload = {
       title:       data.title!,
@@ -171,9 +242,8 @@ export default function App() {
     setDefaultStatus(undefined);
     await fetchTasks();
 
-    // If we were viewing this task, update selectedTask
     if (selectedTask?.id === editingTask.id) {
-      setSelectedTask(null); // will be re-opened from updated list if needed
+      setSelectedTask(null);
     }
   }
 
@@ -197,12 +267,8 @@ export default function App() {
       .update({ status })
       .eq('id', id);
 
-    if (error) {
-      console.error('Error updating status:', error);
-      return;
-    }
+    if (error) { console.error('Error updating status:', error); return; }
     await fetchTasks();
-    // Update selectedTask if open
     if (selectedTask?.id === id) {
       setSelectedTask(prev => prev ? { ...prev, status } : null);
     }
@@ -233,11 +299,27 @@ export default function App() {
 
     if (error) {
       console.error('Error adding comment:', error);
+      alert('Error al agregar comentario: ' + error.message);
       return;
     }
     await fetchComments(selectedTask.id);
   }
 
+  /* ---- MEMBER HANDLERS ---- */
+  async function handleAddMember(data: { name: string; role: string; color: string; initials: string }) {
+    setSavingMember(true);
+    const { error } = await supabase.from('team_members').insert([data]);
+    setSavingMember(false);
+    if (error) {
+      console.error('Error adding member:', error);
+      alert('Error al agregar miembro: ' + error.message);
+      return;
+    }
+    setShowMemberModal(false);
+    await fetchMembers();
+  }
+
+  /* ---- MODAL HELPERS ---- */
   function openNewTask(status?: Status) {
     setEditingTask(null);
     setDefaultStatus(status);
@@ -267,7 +349,7 @@ export default function App() {
         view={view}
         onViewChange={setView}
         onNewTask={() => openNewTask()}
-        currentUser={currentUser}
+        onLogout={onLogout}
       />
 
       {view === 'dashboard' && (
@@ -276,6 +358,7 @@ export default function App() {
           members={members}
           onNewTask={() => openNewTask()}
           onTaskClick={openDetail}
+          onAddMember={() => setShowMemberModal(true)}
         />
       )}
 
@@ -300,7 +383,6 @@ export default function App() {
         />
       )}
 
-      {/* Task Detail Panel */}
       {selectedTask && (
         <TaskDetail
           task={selectedTask}
@@ -315,7 +397,6 @@ export default function App() {
         />
       )}
 
-      {/* Task Modal */}
       {showModal && (
         <TaskModal
           task={editingTask}
@@ -323,6 +404,14 @@ export default function App() {
           defaultStatus={defaultStatus}
           onSave={handleModalSave}
           onClose={() => { setShowModal(false); setEditingTask(null); setDefaultStatus(undefined); }}
+        />
+      )}
+
+      {showMemberModal && (
+        <MemberModal
+          onSave={handleAddMember}
+          onClose={() => setShowMemberModal(false)}
+          saving={savingMember}
         />
       )}
     </div>

@@ -1426,7 +1426,7 @@ img { display: block; max-width: 100%; }
     flex-basis: 100%;
   }
 
-  .lzm-user-text { display: none; }
+  .lzm-app-title-tag { display: none; }
 
   .detail-panel {
     width: 100%;
@@ -1458,4 +1458,180 @@ img { display: block; max-width: 100%; }
   .stat-number { font-size: 2.5rem; }
 
   .lzm-page { padding: 1rem 1rem 3rem; }
+}
+
+/* ---------- LOGIN SCREEN ---------- */
+@keyframes lzm-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(10px); }
+  60% { transform: translateX(-8px); }
+  80% { transform: translateX(8px); }
+}
+
+.lzm-login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--luzma-night);
+  background-image:
+    linear-gradient(rgba(0,85,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,85,255,0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  padding: 1.5rem;
+}
+
+.lzm-login-box {
+  background: var(--luzma-paper);
+  border: var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-xl);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: lzm-modal-in 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+
+.lzm-login-box.shake {
+  animation: lzm-shake 0.5s ease;
+}
+
+.lzm-login-logo-wrap {
+  margin-bottom: 0.25rem;
+}
+
+.lzm-login-title {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  color: var(--luzma-blue);
+  letter-spacing: 0.05em;
+  line-height: 1;
+  margin: 0;
+}
+
+.lzm-login-subtitle {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #888;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.lzm-login-input {
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  text-align: center;
+}
+
+.lzm-login-error {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--luzma-red);
+  text-align: center;
+  background: #fff0f0;
+  border: 2px solid var(--luzma-red);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  margin: 0;
+}
+
+/* ---------- HEADER APP TITLE & LOGOUT ---------- */
+.lzm-app-title-tag {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  padding: 0.3rem 0.85rem;
+}
+
+.lzm-app-title-text {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: #fff;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.lzm-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all var(--transition-pop);
+  flex-shrink: 0;
+}
+.lzm-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #fff;
+  color: #fff;
+  transform: translate(-1px, -1px);
+}
+.lzm-logout-btn:active {
+  transform: translate(1px, 1px);
+}
+
+/* ---------- MEMBER MODAL ---------- */
+.member-preview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--luzma-fog);
+  border: 2px solid var(--luzma-ink);
+  border-radius: 12px;
+}
+
+.member-preview-name {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--luzma-ink);
+  margin-bottom: 0.15rem;
+}
+
+.member-preview-role {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: #777;
+}
+
+.member-color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.member-color-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  box-shadow: 2px 2px 0 var(--luzma-ink);
+  cursor: pointer;
+  transition: transform var(--transition-pop), box-shadow var(--transition-pop), border-color var(--transition-pop);
+  flex-shrink: 0;
+}
+.member-color-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--luzma-ink);
+}
+.member-color-btn.selected {
+  border-color: var(--luzma-ink);
+  transform: scale(1.15);
+  box-shadow: 3px 3px 0 var(--luzma-ink);
 }

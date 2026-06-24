@@ -1,5 +1,4 @@
-import { TeamMember } from '../types';
-import { Avatar, Button } from './ui';
+import { Button } from './ui';
 
 export type View = 'dashboard' | 'board' | 'lista';
 
@@ -7,7 +6,7 @@ interface HeaderProps {
   view: View;
   onViewChange: (v: View) => void;
   onNewTask: () => void;
-  currentUser?: TeamMember | null;
+  onLogout: () => void;
 }
 
 const NAV_ITEMS: { label: string; view: View }[] = [
@@ -16,7 +15,7 @@ const NAV_ITEMS: { label: string; view: View }[] = [
   { label: 'Lista',     view: 'lista' },
 ];
 
-export default function Header({ view, onViewChange, onNewTask, currentUser }: HeaderProps) {
+export default function Header({ view, onViewChange, onNewTask, onLogout }: HeaderProps) {
   return (
     <header className="lzm-header">
       <div className="lzm-header-inner">
@@ -41,7 +40,7 @@ export default function Header({ view, onViewChange, onNewTask, currentUser }: H
           ))}
         </nav>
 
-        {/* Right: Nueva tarea + usuario */}
+        {/* Right: Nueva tarea + título de la app + logout */}
         <div className="lzm-header-right">
           <Button variant="primary" onClick={onNewTask}>
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -50,13 +49,21 @@ export default function Header({ view, onViewChange, onNewTask, currentUser }: H
             Nueva Tarea
           </Button>
 
-          <div className="lzm-user-info">
-            <div className="lzm-user-text">
-              <span className="lzm-user-name">{currentUser?.name ?? 'Carla Vázquez'}</span>
-              <span className="lzm-user-role">{currentUser?.role ?? 'Productora'}</span>
-            </div>
-            <Avatar member={currentUser} size="md" />
+          <div className="lzm-app-title-tag">
+            <span className="lzm-app-title-text">LUZMA TAREAS</span>
           </div>
+
+          <button
+            className="lzm-logout-btn"
+            onClick={onLogout}
+            title="Cerrar sesión"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" />
+              <path d="M11 11l3-3-3-3" />
+              <path d="M14 8H6" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>

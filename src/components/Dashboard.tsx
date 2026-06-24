@@ -6,18 +6,19 @@ interface DashboardProps {
   members: TeamMember[];
   onNewTask: () => void;
   onTaskClick: (t: Task) => void;
+  onAddMember: () => void;
 }
 
 function isOverdue(task: Task): boolean {
   if (!task.due_date) return false;
-  if (task.status === 'completado') return false;
+  if (task.status === 'completado' || task.status === 'en-revision') return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const due = new Date(task.due_date + 'T00:00:00');
   return due < today;
 }
 
-export default function Dashboard({ tasks, members, onNewTask, onTaskClick }: DashboardProps) {
+export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAddMember }: DashboardProps) {
   const total = tasks.length;
   const inProgress = tasks.filter(t => t.status === 'en-progreso').length;
   const completed = tasks.filter(t => t.status === 'completado').length;
@@ -25,7 +26,6 @@ export default function Dashboard({ tasks, members, onNewTask, onTaskClick }: Da
 
   const urgentTasks = tasks.filter(t => t.priority === 'urgente' && t.status !== 'completado');
 
-  // Workload: count active tasks per member
   const workload = members.map(m => ({
     member: m,
     count: tasks.filter(t => t.assignee_id === m.id && t.status !== 'completado').length,
@@ -102,6 +102,9 @@ export default function Dashboard({ tasks, members, onNewTask, onTaskClick }: Da
         <div className="dash-card">
           <div className="dash-card-header">
             <span className="dash-card-title">👥 Carga de Trabajo</span>
+            <Button variant="ghost" size="sm" onClick={onAddMember}>
+              + Miembro
+            </Button>
           </div>
           <div className="dash-card-body">
             {workload.length === 0 ? (
