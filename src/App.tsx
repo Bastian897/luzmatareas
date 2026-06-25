@@ -10,6 +10,15 @@ import TaskDetail from './components/TaskDetail';
 import MemberModal from './components/MemberModal';
 
 /* ============================================================
+   UTILS
+   ============================================================ */
+async function hashPassword(pw: string): Promise<string> {
+  const data = new TextEncoder().encode(pw.toLowerCase());
+  const buf  = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ============================================================
    ENV CHECK
    ============================================================ */
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -135,11 +144,12 @@ export default function App() {
   if (!isConfigured) return <ConfigError />;
 
   async function handleLogin(username: string, pw: string): Promise<string | null> {
+    const hashed = await hashPassword(pw);
     const { data, error } = await supabase
       .from('team_members')
       .select('id, is_boss')
       .eq('username', username.toLowerCase())
-      .eq('password', pw.toLowerCase())
+      .eq('password', hashed)
       .maybeSingle();
 
     if (error) return 'Error de conexión. Intentá de nuevo.';
@@ -372,7 +382,7 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
       initials: data.initials,
     };
     if (data.username) payload.username = data.username.toLowerCase();
-    if (data.password) payload.password = data.password.toLowerCase();
+    if (data.password) payload.password = await hashPassword(data.password);
     if (data.is_boss !== undefined) payload.is_boss = data.is_boss;
 
     const { error } = await supabase.from('team_members').insert([payload]);
