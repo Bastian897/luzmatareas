@@ -24,6 +24,7 @@ export default function Header({ view, onViewChange, onNewTask, onLogout, isBoss
       <div className="lzm-header-inner">
         {/* Logo */}
         <div className="lzm-logo">
+          <img src="/favicon.svg" alt="LuzmaTV" style={{ width: '28px', height: '28px', flexShrink: 0 }} />
           <div className="lzm-logo-box">
             <span className="lzm-logo-luzma">LUZMA</span>
             <span className="lzm-logo-tv">TV</span>
