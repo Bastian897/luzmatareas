@@ -138,8 +138,8 @@ export default function App() {
     const { data, error } = await supabase
       .from('team_members')
       .select('id, is_boss')
-      .eq('username', username)
-      .eq('password', pw)
+      .eq('username', username.toLowerCase())
+      .eq('password', pw.toLowerCase())
       .maybeSingle();
 
     if (error) return 'Error de conexión. Intentá de nuevo.';
@@ -371,8 +371,8 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
       color:    data.color,
       initials: data.initials,
     };
-    if (data.username) payload.username = data.username;
-    if (data.password) payload.password = data.password;
+    if (data.username) payload.username = data.username.toLowerCase();
+    if (data.password) payload.password = data.password.toLowerCase();
     if (data.is_boss !== undefined) payload.is_boss = data.is_boss;
 
     const { error } = await supabase.from('team_members').insert([payload]);

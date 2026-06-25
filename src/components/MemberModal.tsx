@@ -21,7 +21,6 @@ interface NewMemberData {
   initials: string;
   username?: string;
   password?: string;
-  is_boss?: boolean;
 }
 
 interface MemberModalProps {
@@ -36,8 +35,7 @@ export default function MemberModal({ onSave, onClose, saving = false }: MemberM
   const [color, setColor]     = useState('#0055FF');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isBoss, setIsBoss]   = useState(false);
-  const [error, setError]     = useState('');
+  const [error, setError]       = useState('');
 
   const initials = name.trim()
     .split(/\s+/)
@@ -64,7 +62,6 @@ export default function MemberModal({ onSave, onClose, saving = false }: MemberM
       initials,
       username: username.trim() || undefined,
       password: password.trim() || undefined,
-      is_boss:  isBoss || undefined,
     });
   }
 
@@ -174,15 +171,6 @@ export default function MemberModal({ onSave, onClose, saving = false }: MemberM
               />
             </div>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: '0.82rem' }}>
-              <input
-                type="checkbox"
-                checked={isBoss}
-                onChange={e => setIsBoss(e.target.checked)}
-                style={{ width: '1rem', height: '1rem', accentColor: 'var(--luzma-blue)', cursor: 'pointer' }}
-              />
-              Es jefe (ve todas las tareas del equipo)
-            </label>
           </div>
 
           {error && (
