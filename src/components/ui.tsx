@@ -27,6 +27,40 @@ export function Avatar({ member, size = 'md' }: AvatarProps) {
 }
 
 /* ============================================================
+   AVATAR GROUP
+   ============================================================ */
+interface AvatarGroupProps {
+  members: TeamMember[];
+  max?: number;
+}
+
+export function AvatarGroup({ members, max = 3 }: AvatarGroupProps) {
+  if (!members || members.length === 0) {
+    return (
+      <div className="avatar avatar-sm" style={{ background: '#ccc', color: '#fff' }} title="Sin asignar">
+        ?
+      </div>
+    );
+  }
+  const shown = members.slice(0, max);
+  const extra = members.length - max;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      {shown.map((m, i) => (
+        <div key={m.id} style={{ marginLeft: i > 0 ? '-6px' : 0, position: 'relative', zIndex: shown.length - i }}>
+          <Avatar member={m} size="sm" />
+        </div>
+      ))}
+      {extra > 0 && (
+        <div style={{ marginLeft: '-6px', width: '28px', height: '28px', borderRadius: '50%', background: '#555', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800, border: '2px solid #fff', position: 'relative', zIndex: 0 }}>
+          +{extra}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
    STATUS PILL
    ============================================================ */
 interface StatusPillProps {

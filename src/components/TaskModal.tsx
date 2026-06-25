@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Task, TeamMember, Status, Priority } from '../types';
-import { Button } from './ui';
+import { Avatar, Button } from './ui';
 
 interface TaskModalProps {
   task?: Task | null;
@@ -31,19 +31,26 @@ export default function TaskModal({ task, members, defaultStatus, onSave, onClos
   const [description, setDescription] = useState(task?.description ?? '');
   const [status, setStatus]         = useState<Status>(task?.status ?? defaultStatus ?? 'pendiente');
   const [priority, setPriority]     = useState<Priority>(task?.priority ?? 'media');
-  const [assigneeId, setAssigneeId] = useState(task?.assignee_id ?? '');
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(
+    task?.assignees?.map(a => a.id) ?? []
+  );
   const [dueDate, setDueDate]       = useState(task?.due_date ?? '');
   const [tagsStr, setTagsStr]       = useState(task?.tags?.join(', ') ?? '');
   const [error, setError]           = useState('');
 
   useEffect(() => {
-    // Trap focus / close on Escape
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  function toggleAssignee(id: string) {
+    setAssigneeIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -59,17 +66,19 @@ export default function TaskModal({ task, members, defaultStatus, onSave, onClos
       .filter(Boolean);
 
     const data: Partial<Task> = {
-      title: title.trim(),
+      title:       title.trim(),
       description: description.trim() || undefined,
       status,
       priority,
-      assignee_id: assigneeId || undefined,
-      due_date: dueDate || undefined,
+      assignee_ids: assigneeIds,
+      due_date:    dueDate || undefined,
       tags,
     };
 
     onSave(data);
   }
+
+  const nonBossMembers = members.filter(m => !m.is_boss);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -151,32 +160,64 @@ export default function TaskModal({ task, members, defaultStatus, onSave, onClos
             </div>
           </div>
 
-          {/* ASIGNADO | VENCIMIENTO */}
-          <div className="form-grid-2">
-            <div className="form-group">
-              <label className="form-label" htmlFor="modal-assignee">Asignado A</label>
-              <select
-                id="modal-assignee"
-                className="form-select"
-                value={assigneeId}
-                onChange={e => setAssigneeId(e.target.value)}
-              >
-                <option value="">Sin asignar</option>
-                {members.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="modal-due">Vencimiento</label>
-              <input
-                id="modal-due"
-                className="form-input"
-                type="date"
-                value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-              />
-            </div>
+          {/* ASIGNADOS */}
+          <div className="form-group">
+            <label className="form-label">Asignados</label>
+            {nonBossMembers.length === 0 ? (
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', color: '#aaa', fontWeight: 600 }}>
+                Sin miembros disponibles
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                {nonBossMembers.map(m => {
+                  const selected = assigneeIds.includes(m.id);
+                  return (
+                    <label
+                      key={m.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        padding: '0.45rem 0.65rem',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        background: selected ? 'rgba(0,85,255,0.07)' : 'transparent',
+                        border: selected ? '1.5px solid rgba(0,85,255,0.25)' : '1.5px solid transparent',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleAssignee(m.id)}
+                        style={{ accentColor: 'var(--luzma-blue)', width: '15px', height: '15px', flexShrink: 0 }}
+                      />
+                      <Avatar member={m} size="sm" />
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: '0.82rem', color: '#111' }}>
+                          {m.name}
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#888' }}>
+                          {m.role}
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* VENCIMIENTO */}
+          <div className="form-group">
+            <label className="form-label" htmlFor="modal-due">Vencimiento</label>
+            <input
+              id="modal-due"
+              className="form-input"
+              type="date"
+              value={dueDate}
+              onChange={e => setDueDate(e.target.value)}
+            />
           </div>
 
           {/* TAGS */}

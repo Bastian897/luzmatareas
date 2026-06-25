@@ -1,5 +1,5 @@
 import { Task, TeamMember } from '../types';
-import { Avatar, PriorityPill, StatusPill, Button } from './ui';
+import { Avatar, AvatarGroup, PriorityPill, StatusPill, Button } from './ui';
 
 interface DashboardProps {
   tasks: Task[];
@@ -32,7 +32,7 @@ export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAd
     .filter(m => !m.is_boss)
     .map(m => ({
       member: m,
-      count: tasks.filter(t => t.assignee_id === m.id && t.status !== 'completado').length,
+      count: tasks.filter(t => t.assignees?.some(a => a.id === m.id) && t.status !== 'completado').length,
     })).sort((a, b) => b.count - a.count);
 
   return (
@@ -86,14 +86,13 @@ export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAd
               </p>
             ) : (
               urgentTasks.map(task => {
-                const assignee = members.find(m => m.id === task.assignee_id);
                 return (
                   <div
                     key={task.id}
                     className="urgent-task-row"
                     onClick={() => onTaskClick(task)}
                   >
-                    <Avatar member={assignee} size="sm" />
+                    <AvatarGroup members={task.assignees ?? []} max={2} />
                     <div className="urgent-task-info">
                       <div className="urgent-task-title">{task.title}</div>
                       <div className="urgent-task-pills">

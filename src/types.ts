@@ -18,8 +18,8 @@ export interface Task {
   description?: string;
   status: Status;
   priority: Priority;
-  assignee_id?: string;
-  assignee?: TeamMember;
+  assignees: TeamMember[];
+  assignee_ids?: string[];   // transitorio: solo para envío desde el formulario
   due_date?: string;
   tags: string[];
   created_at: string;
@@ -33,14 +33,4 @@ export interface Comment {
   author?: TeamMember;
   text: string;
   created_at: string;
-}
-
-export interface TaskFormData {
-  title: string;
-  description: string;
-  status: Status;
-  priority: Priority;
-  assignee_id: string;
-  due_date: string;
-  tags: string;
 }

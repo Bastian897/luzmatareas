@@ -55,7 +55,6 @@ export default function TaskDetail({
   isBoss,
 }: TaskDetailProps) {
   const [commentText, setCommentText] = useState('');
-  const assignee = members.find(m => m.id === task.assignee_id);
   const overdue = isOverdue(task);
 
   useEffect(() => {
@@ -150,15 +149,19 @@ export default function TaskDetail({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div className="detail-info-row">
               <span className="detail-info-label">Asignado</span>
-              {assignee ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Avatar member={assignee} size="sm" />
-                  <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: '0.85rem' }}>
-                    {assignee.name}
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#888' }}>
-                    {assignee.role}
-                  </span>
+              {task.assignees && task.assignees.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  {task.assignees.map(a => (
+                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Avatar member={a} size="sm" />
+                      <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: '0.85rem' }}>
+                        {a.name}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#888' }}>
+                        {a.role}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.82rem', color: '#aaa', fontWeight: 600 }}>

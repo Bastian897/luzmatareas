@@ -190,17 +190,23 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
   const currentUser = members.find(m => m.id === session.memberId) ?? null;
   const visibleTasks = isBoss
     ? tasks
-    : tasks.filter(t => t.assignee_id === session.memberId);
+    : tasks.filter(t => t.assignees.some(a => a.id === session.memberId));
 
   /* ---- FETCH ---- */
   const fetchTasks = useCallback(async () => {
     const { data, error } = await supabase
       .from('tasks')
-      .select('*, assignee:team_members(*)')
+      .select('*, task_assignees(member:team_members(*))')
       .order('created_at', { ascending: false });
 
     if (error) { console.error('Error fetching tasks:', error); return; }
-    setTasks((data as Task[]) ?? []);
+
+    const tasks: Task[] = (data ?? []).map((row: any) => ({
+      ...row,
+      assignees: (row.task_assignees ?? []).map((ta: any) => ta.member).filter(Boolean),
+      task_assignees: undefined,
+    }));
+    setTasks(tasks);
   }, []);
 
   const fetchMembers = useCallback(async () => {
@@ -237,22 +243,35 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
   /* ---- TASK HANDLERS ---- */
   async function handleAddTask(data: Partial<Task>) {
     if (!isBoss) return;
+    const assigneeIds = data.assignee_ids ?? [];
+
     const payload = {
       title:       data.title!,
       description: data.description ?? null,
       status:      data.status ?? 'pendiente',
       priority:    data.priority ?? 'media',
-      assignee_id: data.assignee_id ?? null,
       due_date:    data.due_date ?? null,
       tags:        data.tags ?? [],
     };
 
-    const { error } = await supabase.from('tasks').insert([payload]);
+    const { data: inserted, error } = await supabase
+      .from('tasks')
+      .insert([payload])
+      .select('id')
+      .single();
+
     if (error) {
       console.error('Error inserting task:', error);
       alert('Error al crear la tarea: ' + error.message);
       return;
     }
+
+    if (assigneeIds.length > 0) {
+      await supabase.from('task_assignees').insert(
+        assigneeIds.map(id => ({ task_id: inserted.id, member_id: id }))
+      );
+    }
+
     setShowModal(false);
     setEditingTask(null);
     setDefaultStatus(undefined);
@@ -261,13 +280,13 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
 
   async function handleUpdateTask(data: Partial<Task>) {
     if (!editingTask || !isBoss) return;
+    const assigneeIds = data.assignee_ids ?? [];
 
     const payload = {
       title:       data.title!,
       description: data.description ?? null,
       status:      data.status ?? editingTask.status,
       priority:    data.priority ?? editingTask.priority,
-      assignee_id: data.assignee_id ?? null,
       due_date:    data.due_date ?? null,
       tags:        data.tags ?? [],
     };
@@ -282,14 +301,21 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
       alert('Error al actualizar la tarea: ' + error.message);
       return;
     }
+
+    // Reemplazar asignados
+    await supabase.from('task_assignees').delete().eq('task_id', editingTask.id);
+    if (assigneeIds.length > 0) {
+      await supabase.from('task_assignees').insert(
+        assigneeIds.map(id => ({ task_id: editingTask.id, member_id: id }))
+      );
+    }
+
     setShowModal(false);
     setEditingTask(null);
     setDefaultStatus(undefined);
     await fetchTasks();
 
-    if (selectedTask?.id === editingTask.id) {
-      setSelectedTask(null);
-    }
+    if (selectedTask?.id === editingTask.id) setSelectedTask(null);
   }
 
   async function handleDeleteTask(id: string) {
@@ -308,11 +334,7 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
   }
 
   async function handleStatusChange(id: string, status: Status) {
-    const { error } = await supabase
-      .from('tasks')
-      .update({ status })
-      .eq('id', id);
-
+    const { error } = await supabase.from('tasks').update({ status }).eq('id', id);
     if (error) { console.error('Error updating status:', error); return; }
     await fetchTasks();
     if (selectedTask?.id === id) {
@@ -336,13 +358,11 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
 
   async function handleAddComment(text: string, authorId: string) {
     if (!selectedTask) return;
-
     const { error } = await supabase.from('comments').insert([{
       task_id:   selectedTask.id,
       author_id: authorId || null,
       text,
     }]);
-
     if (error) {
       console.error('Error adding comment:', error);
       alert('Error al agregar comentario: ' + error.message);
@@ -371,7 +391,6 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
     initials: string;
     username?: string;
     password?: string;
-    is_boss?: boolean;
   }) {
     if (!isBoss) return;
     setSavingMember(true);
@@ -383,7 +402,6 @@ function AppInner({ session, onLogout }: { session: Session; onLogout: () => voi
     };
     if (data.username) payload.username = data.username.toLowerCase();
     if (data.password) payload.password = await hashPassword(data.password);
-    if (data.is_boss !== undefined) payload.is_boss = data.is_boss;
 
     const { error } = await supabase.from('team_members').insert([payload]);
     setSavingMember(false);

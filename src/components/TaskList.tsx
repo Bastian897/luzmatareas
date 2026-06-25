@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Task, TeamMember, Status, Priority } from '../types';
-import { Avatar, StatusPill, PriorityPill, TagChip, Button, Icons } from './ui';
+import { AvatarGroup, StatusPill, PriorityPill, TagChip, Button, Icons } from './ui';
 
 interface TaskListProps {
   tasks: Task[];
@@ -62,7 +62,7 @@ export default function TaskList({ tasks, members, onTaskClick, onDelete, onComp
       result = result.filter(t => t.priority === filterPriority);
     }
     if (filterAssignee) {
-      result = result.filter(t => t.assignee_id === filterAssignee);
+      result = result.filter(t => t.assignees?.some(a => a.id === filterAssignee));
     }
     if (filterTag) {
       result = result.filter(t => t.tags?.includes(filterTag));
@@ -207,7 +207,6 @@ export default function TaskList({ tasks, members, onTaskClick, onDelete, onComp
               </tr>
             ) : (
               filtered.map(task => {
-                const assignee = members.find(m => m.id === task.assignee_id);
                 const overdue = isOverdue(task);
 
                 return (
@@ -223,9 +222,11 @@ export default function TaskList({ tasks, members, onTaskClick, onDelete, onComp
                     <td data-label="Estado"><StatusPill status={task.status} /></td>
                     <td data-label="Asignado">
                       <div className="table-assignee">
-                        <Avatar member={assignee} size="sm" />
+                        <AvatarGroup members={task.assignees ?? []} max={3} />
                         <span className="table-assignee-name">
-                          {assignee?.name ?? '—'}
+                          {task.assignees?.length
+                            ? task.assignees.map(a => a.name).join(', ')
+                            : '—'}
                         </span>
                       </div>
                     </td>

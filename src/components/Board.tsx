@@ -1,6 +1,6 @@
 import { useState, type DragEvent } from 'react';
 import { Task, TeamMember, Status } from '../types';
-import { Avatar, PriorityPill, TagChip, Button } from './ui';
+import { AvatarGroup, PriorityPill, TagChip, Button } from './ui';
 
 interface BoardProps {
   tasks: Task[];
@@ -40,7 +40,7 @@ function formatDate(dateStr?: string): string {
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
 }
 
-export default function Board({ tasks, members, onTaskClick, onStatusChange, onNewTask, isBoss }: BoardProps) {
+export default function Board({ tasks, onTaskClick, onStatusChange, onNewTask, isBoss }: BoardProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<Status | null>(null);
 
@@ -111,7 +111,6 @@ export default function Board({ tasks, members, onTaskClick, onStatusChange, onN
                   <div className="board-empty">Sin tareas</div>
                 )}
                 {colTasks.map(task => {
-                  const assignee = members.find(m => m.id === task.assignee_id);
                   const overdue = isOverdue(task);
 
                   return (
@@ -142,7 +141,7 @@ export default function Board({ tasks, members, onTaskClick, onStatusChange, onN
                             </span>
                           )}
                         </div>
-                        <Avatar member={assignee} size="sm" />
+                        <AvatarGroup members={task.assignees ?? []} max={3} />
                       </div>
                     </div>
                   );
