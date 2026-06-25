@@ -83,11 +83,7 @@ function LoginScreen({ onLogin }: { onLogin: (username: string, pw: string) => P
     <div className="lzm-login-screen">
       <div className={`lzm-login-box${shaking ? ' shake' : ''}`}>
         <div className="lzm-login-logo-wrap">
-          <img src="/favicon.svg" alt="LuzmaTV" style={{ width: '52px', height: '52px', marginBottom: '0.25rem' }} />
-          <div className="lzm-logo-box">
-            <span className="lzm-logo-luzma">LUZMA</span>
-            <span className="lzm-logo-tv">TV</span>
-          </div>
+          <img src="/luzmatv-logo.webp" alt="LuzmaTV" style={{ height: '64px', width: 'auto', marginBottom: '0.25rem' }} />
         </div>
         <h1 className="lzm-login-title">TAREAS</h1>
         <p className="lzm-login-subtitle">Ingresá tus datos para continuar</p>
