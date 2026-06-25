@@ -1,4 +1,5 @@
-import { Button } from './ui';
+import { TeamMember } from '../types';
+import { Avatar, Button } from './ui';
 
 export type View = 'dashboard' | 'board' | 'lista';
 
@@ -7,6 +8,8 @@ interface HeaderProps {
   onViewChange: (v: View) => void;
   onNewTask: () => void;
   onLogout: () => void;
+  isBoss: boolean;
+  currentUser: TeamMember | null;
 }
 
 const NAV_ITEMS: { label: string; view: View }[] = [
@@ -15,7 +18,7 @@ const NAV_ITEMS: { label: string; view: View }[] = [
   { label: 'Lista',     view: 'lista' },
 ];
 
-export default function Header({ view, onViewChange, onNewTask, onLogout }: HeaderProps) {
+export default function Header({ view, onViewChange, onNewTask, onLogout, isBoss, currentUser }: HeaderProps) {
   return (
     <header className="lzm-header">
       <div className="lzm-header-inner">
@@ -40,14 +43,25 @@ export default function Header({ view, onViewChange, onNewTask, onLogout }: Head
           ))}
         </nav>
 
-        {/* Right: Nueva tarea + título de la app + logout */}
+        {/* Right: Nueva tarea + usuario actual + título de la app + logout */}
         <div className="lzm-header-right">
-          <Button variant="primary" onClick={onNewTask}>
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M8 2v12M2 8h12" />
-            </svg>
-            Nueva Tarea
-          </Button>
+          {isBoss && (
+            <Button variant="primary" onClick={onNewTask}>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M8 2v12M2 8h12" />
+              </svg>
+              Nueva Tarea
+            </Button>
+          )}
+
+          {currentUser && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: 0.9 }}>
+              <Avatar member={currentUser} size="sm" />
+              <span className="lzm-current-user-name" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: '0.75rem', color: '#fff' }}>
+                {currentUser.name.split(' ')[0]}
+              </span>
+            </div>
+          )}
 
           <div className="lzm-app-title-tag">
             <span className="lzm-app-title-text">LUZMA TAREAS</span>

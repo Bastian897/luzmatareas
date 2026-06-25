@@ -9,6 +9,7 @@ interface TaskListProps {
   onDelete: (id: string) => void;
   onComplete: (id: string) => void;
   onNewTask: () => void;
+  isBoss: boolean;
 }
 
 type SortDir = 'asc' | 'desc';
@@ -28,7 +29,7 @@ function formatDate(dateStr?: string): string {
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function TaskList({ tasks, members, onTaskClick, onDelete, onComplete, onNewTask }: TaskListProps) {
+export default function TaskList({ tasks, members, onTaskClick, onDelete, onComplete, onNewTask, isBoss }: TaskListProps) {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<Status | ''>('');
   const [filterPriority, setFilterPriority] = useState<Priority | ''>('');
@@ -89,12 +90,14 @@ export default function TaskList({ tasks, members, onTaskClick, onDelete, onComp
           <h1>Lista de Tareas</h1>
           <p className="lzm-subtitle">Filtrá, buscá y gestioná todas las tareas del equipo en un solo lugar.</p>
         </div>
-        <Button variant="primary" onClick={onNewTask} size="lg">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M8 2v12M2 8h12" />
-          </svg>
-          Nueva Tarea
-        </Button>
+        {isBoss && (
+          <Button variant="primary" onClick={onNewTask} size="lg">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M8 2v12M2 8h12" />
+            </svg>
+            Nueva Tarea
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -253,18 +256,20 @@ export default function TaskList({ tasks, members, onTaskClick, onDelete, onComp
                             <path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z" />
                           </svg>
                         </button>
-                        <button
-                          className="icon-btn icon-btn-red"
-                          title="Eliminar tarea"
-                          onClick={e => {
-                            e.stopPropagation();
-                            if (window.confirm(`¿Eliminar "${task.title}"?`)) {
-                              onDelete(task.id);
-                            }
-                          }}
-                        >
-                          {Icons.trash}
-                        </button>
+                        {isBoss && (
+                          <button
+                            className="icon-btn icon-btn-red"
+                            title="Eliminar tarea"
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (window.confirm(`¿Eliminar "${task.title}"?`)) {
+                                onDelete(task.id);
+                              }
+                            }}
+                          >
+                            {Icons.trash}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

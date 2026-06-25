@@ -1464,7 +1464,8 @@ img { display: block; max-width: 100%; }
     justify-content: center;
     min-height: 40px;
   }
-  .lzm-app-title-tag { display: none; }
+  .lzm-app-title-tag      { display: none; }
+  .lzm-current-user-name  { display: none; }
 
   /* Modales: bottom sheet */
   .modal-overlay { align-items: flex-end; padding: 0; }

@@ -19,6 +19,8 @@ const isConfigured = Boolean(
   SUPABASE_URL !== 'undefined' && SUPABASE_KEY !== 'undefined'
 );
 
+type Session = { memberId: string; isBoss: boolean };
+
 /* ============================================================
    CONFIG ERROR SCREEN
    ============================================================ */
@@ -44,15 +46,24 @@ function ConfigError() {
 /* ============================================================
    LOGIN SCREEN
    ============================================================ */
-function LoginScreen({ onLogin }: { onLogin: (pw: string) => boolean }) {
+function LoginScreen({ onLogin }: { onLogin: (username: string, pw: string) => Promise<string | null> }) {
+  const [username, setUsername] = useState('');
   const [pw, setPw] = useState('');
   const [error, setError] = useState('');
   const [shaking, setShaking] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!onLogin(pw)) {
-      setError('Contraseña incorrecta');
+    if (!username.trim() || !pw) {
+      setError('Completá usuario y contraseña.');
+      return;
+    }
+    setLoading(true);
+    const err = await onLogin(username.trim(), pw);
+    setLoading(false);
+    if (err) {
+      setError(err);
       setShaking(true);
       setTimeout(() => setShaking(false), 500);
       setPw('');
@@ -69,19 +80,29 @@ function LoginScreen({ onLogin }: { onLogin: (pw: string) => boolean }) {
           </div>
         </div>
         <h1 className="lzm-login-title">TAREAS</h1>
-        <p className="lzm-login-subtitle">Ingresá la contraseña del equipo</p>
+        <p className="lzm-login-subtitle">Ingresá tus datos para continuar</p>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}>
+          <input
+            type="text"
+            className="form-input lzm-login-input"
+            placeholder="Usuario"
+            value={username}
+            onChange={e => { setUsername(e.target.value); setError(''); }}
+            autoFocus
+            autoComplete="username"
+            style={{ letterSpacing: 'normal', textAlign: 'left' }}
+          />
           <input
             type="password"
             className="form-input lzm-login-input"
-            placeholder="••••••••••"
+            placeholder="Contraseña"
             value={pw}
             onChange={e => { setPw(e.target.value); setError(''); }}
-            autoFocus
+            autoComplete="current-password"
           />
           {error && <p className="lzm-login-error">{error}</p>}
-          <button type="submit" className="btn btn-primary btn-lg btn-full">
-            Entrar
+          <button type="submit" className="btn btn-primary btn-lg btn-full" disabled={loading}>
+            {loading ? 'Verificando...' : 'Entrar'}
           </button>
         </form>
       </div>
@@ -105,35 +126,44 @@ function LoadingScreen() {
    APP — maneja solo el login
    ============================================================ */
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    () => sessionStorage.getItem('lzm-auth') === '1'
-  );
+  const [session, setSession] = useState<Session | null>(() => {
+    const raw = sessionStorage.getItem('lzm-auth');
+    if (!raw) return null;
+    try { return JSON.parse(raw) as Session; } catch { return null; }
+  });
 
   if (!isConfigured) return <ConfigError />;
 
-  function handleLogin(pw: string): boolean {
-    if (pw === 'luzmatv123') {
-      sessionStorage.setItem('lzm-auth', '1');
-      setIsLoggedIn(true);
-      return true;
-    }
-    return false;
+  async function handleLogin(username: string, pw: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('team_members')
+      .select('id, is_boss')
+      .eq('username', username)
+      .eq('password', pw)
+      .maybeSingle();
+
+    if (error) return 'Error de conexión. Intentá de nuevo.';
+    if (!data) return 'Usuario o contraseña incorrectos.';
+
+    const s: Session = { memberId: data.id, isBoss: data.is_boss ?? false };
+    sessionStorage.setItem('lzm-auth', JSON.stringify(s));
+    setSession(s);
+    return null;
   }
 
   function handleLogout() {
     sessionStorage.removeItem('lzm-auth');
-    setIsLoggedIn(false);
+    setSession(null);
   }
 
-  if (!isLoggedIn) return <LoginScreen onLogin={handleLogin} />;
-
-  return <AppInner onLogout={handleLogout} />;
+  if (!session) return <LoginScreen onLogin={handleLogin} />;
+  return <AppInner session={session} onLogout={handleLogout} />;
 }
 
 /* ============================================================
    APP INNER — toda la lógica de la app (solo si está logueado)
    ============================================================ */
-function AppInner({ onLogout }: { onLogout: () => void }) {
+function AppInner({ session, onLogout }: { session: Session; onLogout: () => void }) {
   const [view, setView]                       = useState<View>('dashboard');
   const [tasks, setTasks]                     = useState<Task[]>([]);
   const [members, setMembers]                 = useState<TeamMember[]>([]);
@@ -146,7 +176,11 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [savingMember, setSavingMember]       = useState(false);
 
-  const currentUser = members.find(m => m.role === 'Productora') ?? members[0] ?? null;
+  const isBoss = session.isBoss;
+  const currentUser = members.find(m => m.id === session.memberId) ?? null;
+  const visibleTasks = isBoss
+    ? tasks
+    : tasks.filter(t => t.assignee_id === session.memberId);
 
   /* ---- FETCH ---- */
   const fetchTasks = useCallback(async () => {
@@ -192,6 +226,7 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
 
   /* ---- TASK HANDLERS ---- */
   async function handleAddTask(data: Partial<Task>) {
+    if (!isBoss) return;
     const payload = {
       title:       data.title!,
       description: data.description ?? null,
@@ -215,7 +250,7 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
   }
 
   async function handleUpdateTask(data: Partial<Task>) {
-    if (!editingTask) return;
+    if (!editingTask || !isBoss) return;
 
     const payload = {
       title:       data.title!,
@@ -248,6 +283,7 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
   }
 
   async function handleDeleteTask(id: string) {
+    if (!isBoss) return;
     const { error } = await supabase.from('tasks').delete().eq('id', id);
     if (error) {
       console.error('Error deleting task:', error);
@@ -307,6 +343,7 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
 
   /* ---- MEMBER HANDLERS ---- */
   async function handleDeleteMember(id: string, name: string) {
+    if (!isBoss) return;
     if (!window.confirm(`¿Eliminar a ${name}? Sus tareas quedarán sin asignar.`)) return;
     const { error } = await supabase.from('team_members').delete().eq('id', id);
     if (error) {
@@ -317,9 +354,28 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
     await Promise.all([fetchMembers(), fetchTasks()]);
   }
 
-  async function handleAddMember(data: { name: string; role: string; color: string; initials: string }) {
+  async function handleAddMember(data: {
+    name: string;
+    role: string;
+    color: string;
+    initials: string;
+    username?: string;
+    password?: string;
+    is_boss?: boolean;
+  }) {
+    if (!isBoss) return;
     setSavingMember(true);
-    const { error } = await supabase.from('team_members').insert([data]);
+    const payload: Record<string, unknown> = {
+      name:     data.name,
+      role:     data.role,
+      color:    data.color,
+      initials: data.initials,
+    };
+    if (data.username) payload.username = data.username;
+    if (data.password) payload.password = data.password;
+    if (data.is_boss !== undefined) payload.is_boss = data.is_boss;
+
+    const { error } = await supabase.from('team_members').insert([payload]);
     setSavingMember(false);
     if (error) {
       console.error('Error adding member:', error);
@@ -332,13 +388,14 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
 
   /* ---- MODAL HELPERS ---- */
   function openNewTask(status?: Status) {
+    if (!isBoss) return;
     setEditingTask(null);
     setDefaultStatus(status);
     setShowModal(true);
   }
 
   function openEditTask() {
-    if (!selectedTask) return;
+    if (!selectedTask || !isBoss) return;
     setEditingTask(selectedTask);
     setShowModal(true);
   }
@@ -361,37 +418,42 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
         onViewChange={setView}
         onNewTask={() => openNewTask()}
         onLogout={onLogout}
+        isBoss={isBoss}
+        currentUser={currentUser}
       />
 
       {view === 'dashboard' && (
         <Dashboard
-          tasks={tasks}
+          tasks={visibleTasks}
           members={members}
           onNewTask={() => openNewTask()}
           onTaskClick={openDetail}
           onAddMember={() => setShowMemberModal(true)}
           onDeleteMember={handleDeleteMember}
+          isBoss={isBoss}
         />
       )}
 
       {view === 'board' && (
         <Board
-          tasks={tasks}
+          tasks={visibleTasks}
           members={members}
           onTaskClick={openDetail}
           onStatusChange={handleStatusChange}
           onNewTask={openNewTask}
+          isBoss={isBoss}
         />
       )}
 
       {view === 'lista' && (
         <TaskList
-          tasks={tasks}
+          tasks={visibleTasks}
           members={members}
           onTaskClick={openDetail}
           onDelete={handleDeleteTask}
           onComplete={handleCompleteTask}
           onNewTask={() => openNewTask()}
+          isBoss={isBoss}
         />
       )}
 
@@ -406,10 +468,11 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
           onDelete={() => handleDeleteTask(selectedTask.id)}
           onAddComment={handleAddComment}
           onStatusChange={handleDetailStatusChange}
+          isBoss={isBoss}
         />
       )}
 
-      {showModal && (
+      {showModal && isBoss && (
         <TaskModal
           task={editingTask}
           members={members}
@@ -419,7 +482,7 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
         />
       )}
 
-      {showMemberModal && (
+      {showMemberModal && isBoss && (
         <MemberModal
           onSave={handleAddMember}
           onClose={() => setShowMemberModal(false)}

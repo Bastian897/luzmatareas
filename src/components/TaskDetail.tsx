@@ -12,6 +12,7 @@ interface TaskDetailProps {
   onDelete: () => void;
   onAddComment: (text: string, authorId: string) => void;
   onStatusChange: (status: Status) => void;
+  isBoss: boolean;
 }
 
 function isOverdue(task: Task): boolean {
@@ -51,6 +52,7 @@ export default function TaskDetail({
   onDelete,
   onAddComment,
   onStatusChange,
+  isBoss,
 }: TaskDetailProps) {
   const [commentText, setCommentText] = useState('');
   const assignee = members.find(m => m.id === task.assignee_id);
@@ -106,22 +108,26 @@ export default function TaskDetail({
               ))}
             </select>
 
-            <button
-              className="icon-btn icon-btn-yellow"
-              title="Editar"
-              onClick={onEdit}
-            >
-              {Icons.edit}
-            </button>
-            <button
-              className="icon-btn icon-btn-red"
-              title="Eliminar"
-              onClick={() => {
-                if (window.confirm(`¿Eliminar "${task.title}"?`)) onDelete();
-              }}
-            >
-              {Icons.trash}
-            </button>
+            {isBoss && (
+              <button
+                className="icon-btn icon-btn-yellow"
+                title="Editar"
+                onClick={onEdit}
+              >
+                {Icons.edit}
+              </button>
+            )}
+            {isBoss && (
+              <button
+                className="icon-btn icon-btn-red"
+                title="Eliminar"
+                onClick={() => {
+                  if (window.confirm(`¿Eliminar "${task.title}"?`)) onDelete();
+                }}
+              >
+                {Icons.trash}
+              </button>
+            )}
             <button
               className="icon-btn"
               title="Cerrar"

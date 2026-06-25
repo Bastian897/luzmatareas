@@ -8,6 +8,7 @@ interface DashboardProps {
   onTaskClick: (t: Task) => void;
   onAddMember: () => void;
   onDeleteMember: (id: string, name: string) => void;
+  isBoss: boolean;
 }
 
 function isOverdue(task: Task): boolean {
@@ -19,7 +20,7 @@ function isOverdue(task: Task): boolean {
   return due < today;
 }
 
-export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAddMember, onDeleteMember }: DashboardProps) {
+export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAddMember, onDeleteMember, isBoss }: DashboardProps) {
   const total = tasks.length;
   const inProgress = tasks.filter(t => t.status === 'en-progreso').length;
   const completed = tasks.filter(t => t.status === 'completado').length;
@@ -27,17 +28,23 @@ export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAd
 
   const urgentTasks = tasks.filter(t => t.priority === 'urgente' && t.status !== 'completado');
 
-  const workload = members.map(m => ({
-    member: m,
-    count: tasks.filter(t => t.assignee_id === m.id && t.status !== 'completado').length,
-  })).sort((a, b) => b.count - a.count);
+  const workload = members
+    .filter(m => !m.is_boss)
+    .map(m => ({
+      member: m,
+      count: tasks.filter(t => t.assignee_id === m.id && t.status !== 'completado').length,
+    })).sort((a, b) => b.count - a.count);
 
   return (
     <div className="lzm-page">
       <div className="lzm-page-header">
-        <p className="lzm-eyebrow">Resumen del equipo</p>
+        <p className="lzm-eyebrow">{isBoss ? 'Resumen del equipo' : 'Mis tareas'}</p>
         <h1>Dashboard</h1>
-        <p className="lzm-subtitle">Vista rápida de la operación del canal — todo lo que está pasando, ahora mismo.</p>
+        <p className="lzm-subtitle">
+          {isBoss
+            ? 'Vista rápida de la operación del canal — todo lo que está pasando, ahora mismo.'
+            : 'Tus tareas activas — actualizá el estado y dejá tus comentarios.'}
+        </p>
       </div>
 
       {/* Stat cards */}
@@ -66,9 +73,11 @@ export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAd
         <div className="dash-card">
           <div className="dash-card-header">
             <span className="dash-card-title">🔴 Tareas Urgentes</span>
-            <Button variant="accent" size="sm" onClick={onNewTask}>
-              + Nueva
-            </Button>
+            {isBoss && (
+              <Button variant="accent" size="sm" onClick={onNewTask}>
+                + Nueva
+              </Button>
+            )}
           </div>
           <div className="dash-card-body">
             {urgentTasks.length === 0 ? (
@@ -99,44 +108,46 @@ export default function Dashboard({ tasks, members, onNewTask, onTaskClick, onAd
           </div>
         </div>
 
-        {/* Workload */}
-        <div className="dash-card">
-          <div className="dash-card-header">
-            <span className="dash-card-title">👥 Carga de Trabajo</span>
-            <Button variant="ghost" size="sm" onClick={onAddMember}>
-              + Miembro
-            </Button>
-          </div>
-          <div className="dash-card-body">
-            {workload.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#aaa', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', padding: '1.5rem 0', fontWeight: 700 }}>
-                Sin miembros aún
-              </p>
-            ) : (
-              workload.map(({ member, count }) => (
-                <div key={member.id} className="workload-row">
-                  <Avatar member={member} size="sm" />
-                  <div className="workload-info">
-                    <div className="workload-name">{member.name}</div>
-                    <div className="workload-role">{member.role}</div>
+        {/* Workload — solo para jefes */}
+        {isBoss && (
+          <div className="dash-card">
+            <div className="dash-card-header">
+              <span className="dash-card-title">👥 Carga de Trabajo</span>
+              <Button variant="ghost" size="sm" onClick={onAddMember}>
+                + Miembro
+              </Button>
+            </div>
+            <div className="dash-card-body">
+              {workload.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#aaa', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', padding: '1.5rem 0', fontWeight: 700 }}>
+                  Sin miembros aún
+                </p>
+              ) : (
+                workload.map(({ member, count }) => (
+                  <div key={member.id} className="workload-row">
+                    <Avatar member={member} size="sm" />
+                    <div className="workload-info">
+                      <div className="workload-name">{member.name}</div>
+                      <div className="workload-role">{member.role}</div>
+                    </div>
+                    <div className={`workload-badge${count === 0 ? ' zero' : ''}`}>
+                      {count}
+                    </div>
+                    <button
+                      className="workload-delete-btn"
+                      title={`Eliminar ${member.name}`}
+                      onClick={() => onDeleteMember(member.id, member.name)}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" />
+                      </svg>
+                    </button>
                   </div>
-                  <div className={`workload-badge${count === 0 ? ' zero' : ''}`}>
-                    {count}
-                  </div>
-                  <button
-                    className="workload-delete-btn"
-                    title={`Eliminar ${member.name}`}
-                    onClick={() => onDeleteMember(member.id, member.name)}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" />
-                    </svg>
-                  </button>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

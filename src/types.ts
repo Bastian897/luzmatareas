@@ -7,6 +7,9 @@ export interface TeamMember {
   role: string;
   color: string;
   initials: string;
+  username?: string;
+  password?: string;
+  is_boss?: boolean;
 }
 
 export interface Task {

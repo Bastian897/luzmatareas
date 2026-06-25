@@ -8,6 +8,7 @@ interface BoardProps {
   onTaskClick: (t: Task) => void;
   onStatusChange: (id: string, status: Status) => void;
   onNewTask: (status?: Status) => void;
+  isBoss: boolean;
 }
 
 interface Column {
@@ -39,7 +40,7 @@ function formatDate(dateStr?: string): string {
   return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
 }
 
-export default function Board({ tasks, members, onTaskClick, onStatusChange, onNewTask }: BoardProps) {
+export default function Board({ tasks, members, onTaskClick, onStatusChange, onNewTask, isBoss }: BoardProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<Status | null>(null);
 
@@ -147,17 +148,19 @@ export default function Board({ tasks, members, onTaskClick, onStatusChange, onN
                   );
                 })}
 
-                {/* Add button */}
-                <div className="board-add-btn">
-                  <Button
-                    variant={col.status === 'en-progreso' || col.status === 'completado' ? 'white' : 'ghost'}
-                    size="sm"
-                    fullWidth
-                    onClick={() => onNewTask(col.status)}
-                  >
-                    + Agregar tarea
-                  </Button>
-                </div>
+                {/* Add button — solo para jefes */}
+                {isBoss && (
+                  <div className="board-add-btn">
+                    <Button
+                      variant={col.status === 'en-progreso' || col.status === 'completado' ? 'white' : 'ghost'}
+                      size="sm"
+                      fullWidth
+                      onClick={() => onNewTask(col.status)}
+                    >
+                      + Agregar tarea
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           );

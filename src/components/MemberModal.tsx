@@ -19,6 +19,9 @@ interface NewMemberData {
   role: string;
   color: string;
   initials: string;
+  username?: string;
+  password?: string;
+  is_boss?: boolean;
 }
 
 interface MemberModalProps {
@@ -28,10 +31,13 @@ interface MemberModalProps {
 }
 
 export default function MemberModal({ onSave, onClose, saving = false }: MemberModalProps) {
-  const [name, setName]   = useState('');
-  const [role, setRole]   = useState('');
-  const [color, setColor] = useState('#0055FF');
-  const [error, setError] = useState('');
+  const [name, setName]       = useState('');
+  const [role, setRole]       = useState('');
+  const [color, setColor]     = useState('#0055FF');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isBoss, setIsBoss]   = useState(false);
+  const [error, setError]     = useState('');
 
   const initials = name.trim()
     .split(/\s+/)
@@ -46,8 +52,20 @@ export default function MemberModal({ onSave, onClose, saving = false }: MemberM
     e.preventDefault();
     if (!name.trim()) { setError('El nombre es obligatorio.'); return; }
     if (!role.trim()) { setError('El rol es obligatorio.'); return; }
+    if (username.trim() && !password.trim()) {
+      setError('Si ingresás un usuario, también necesitás una contraseña.');
+      return;
+    }
     setError('');
-    await onSave({ name: name.trim(), role: role.trim(), color, initials });
+    await onSave({
+      name:     name.trim(),
+      role:     role.trim(),
+      color,
+      initials,
+      username: username.trim() || undefined,
+      password: password.trim() || undefined,
+      is_boss:  isBoss || undefined,
+    });
   }
 
   return (
@@ -124,6 +142,47 @@ export default function MemberModal({ onSave, onClose, saving = false }: MemberM
                 />
               ))}
             </div>
+          </div>
+
+          {/* Acceso a la app */}
+          <div style={{ borderTop: '1px solid var(--luzma-border)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <p style={{ fontFamily: 'var(--font-ui)', fontWeight: 900, fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#888', margin: 0 }}>
+              Acceso a la app (opcional)
+            </p>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Usuario</label>
+              <input
+                className="form-input"
+                type="text"
+                placeholder="Ej. ana.garcia"
+                value={username}
+                onChange={e => { setUsername(e.target.value); setError(''); }}
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Contraseña</label>
+              <input
+                className="form-input"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError(''); }}
+                autoComplete="new-password"
+              />
+            </div>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: '0.82rem' }}>
+              <input
+                type="checkbox"
+                checked={isBoss}
+                onChange={e => setIsBoss(e.target.checked)}
+                style={{ width: '1rem', height: '1rem', accentColor: 'var(--luzma-blue)', cursor: 'pointer' }}
+              />
+              Es jefe (ve todas las tareas del equipo)
+            </label>
           </div>
 
           {error && (
