@@ -87,9 +87,10 @@ function LoginScreen({ onLogin }: { onLogin: (username: string, pw: string) => P
         </div>
         <h1 className="lzm-login-title">TAREAS</h1>
         <p className="lzm-login-subtitle">Ingresá tus datos para continuar</p>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}>
+        <form onSubmit={handleSubmit} method="post" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}>
           <input
             type="text"
+            name="username"
             className="form-input lzm-login-input"
             placeholder="Usuario"
             value={username}
@@ -100,6 +101,7 @@ function LoginScreen({ onLogin }: { onLogin: (username: string, pw: string) => P
           />
           <input
             type="password"
+            name="password"
             className="form-input lzm-login-input"
             placeholder="Contraseña"
             value={pw}
